@@ -81,7 +81,7 @@ int main(const int argc, const char *argv[])
         fin.close();
         system("rm tempcwd.txt");
 
-        fout << "cp " << cwd << "/" << argv[2] << " .";
+        fout << "cp -r " << cwd << "/" << argv[2] << " .";
         fout.close();
 
         system("mv ./temp.txt " DIR FILE);
