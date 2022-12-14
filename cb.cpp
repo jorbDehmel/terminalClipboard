@@ -64,23 +64,27 @@ int main(const int argc, const char *argv[])
 
         //////////////////
 
-        ofstream fout(DIR FILE, ios::out);
+        system("mv " DIR FILE " ./temp.txt");
+
+        ofstream fout("./temp.txt", ios::out);
         if (!fout.is_open())
         {
             cout << "\033[1;31m" << "Error:  could not open clipboard files." << "\033[0m\n";
             return 5;
         }
 
-        system("pwd >temp.txt");
+        system("pwd >tempcwd.txt");
         string cwd;
-        ifstream fin("temp.txt", ios::in);
+        ifstream fin("tempcwd.txt", ios::in);
         assert(fin.is_open());
         fin >> cwd;
         fin.close();
-        system("rm temp.txt");
+        system("rm tempcwd.txt");
 
         fout << "cp " << cwd << "/" << argv[2] << " .";
         fout.close();
+
+        system("mv ./temp.txt " DIR FILE);
 
         //////////////////
 
@@ -101,23 +105,27 @@ int main(const int argc, const char *argv[])
 
         //////////////////
 
-        ofstream fout(DIR FILE, ios::out);
+        system("mv " DIR FILE " ./temp.txt");
+
+        ofstream fout("./temp.txt", ios::out);
         if (!fout.is_open())
         {
             cout << "\033[1;31m" << "Error:  could not open clipboard files." << "\033[0m\n";
             return 5;
         }
 
-        system("pwd >temp.txt");
+        system("pwd >tempcwd.txt");
         string cwd;
-        ifstream fin("temp.txt", ios::in);
+        ifstream fin("tempcwd.txt", ios::in);
         assert(fin.is_open());
         fin >> cwd;
         fin.close();
-        system("rm temp.txt");
+        system("rm tempcwd.txt");
 
         fout << "mv " << cwd << "/" << argv[2] << " .";
         fout.close();
+
+        system("mv ./temp.txt " DIR FILE);
 
         //////////////////
 
@@ -133,7 +141,9 @@ int main(const int argc, const char *argv[])
 
         //////////////////
 
-        ifstream fin(DIR FILE, ios::in);
+        system("mv " DIR FILE " ./temp.txt");
+
+        ifstream fin("./temp.txt", ios::in);
         if (!fin.is_open())
         {
             cout << "\033[1;31m" << "Error:  could not open clipboard files." << "\033[0m\n";
@@ -143,6 +153,8 @@ int main(const int argc, const char *argv[])
         string command;
         getline(fin, command);
         fin.close();
+
+        system("mv ./temp.txt " DIR FILE);
 
         if (system(command.c_str()) != 0)
         {
