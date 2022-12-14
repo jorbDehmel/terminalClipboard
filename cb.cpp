@@ -175,6 +175,8 @@ int main(const int argc, const char *argv[])
 
             //////////////////
 
+            cout << "Pasting...";
+
             safeSystem("mv " DIR FILE " ./temp.txt");
 
             ifstream fin("./temp.txt", ios::in);
@@ -194,7 +196,8 @@ int main(const int argc, const char *argv[])
 
             if (system(command.c_str()) != 0)
             {
-                cout << "\033[1;31m"
+                cout << "\r"
+                     << "\033[1;31m"
                      << "Error:  could not paste."
                      << "\033[0m\n";
                 return 6;
@@ -202,8 +205,9 @@ int main(const int argc, const char *argv[])
 
             //////////////////
 
-            cout << "\033[1;32m"
-                 << "Pasted!"
+            cout << "\r"
+                 << "\033[1;32m"
+                 << "Pasted!   "
                  << "\033[0m\n";
         }
 
