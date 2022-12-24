@@ -5,6 +5,7 @@
 #include <cassert>
 #include <filesystem>
 #include <string>
+#include <vector>
 using namespace std;
 
 ////////////////////////////
@@ -13,17 +14,6 @@ using namespace std;
 #define FILE "/data.txt"
 
 ////////////////////////////
-
-bool cmpCharArrs(const char *a, const char b[])
-{
-    int i;
-    for (i = 0; a[i] != '\0' && b[i] != '\0'; i++)
-    {
-        if (a[i] != b[i])
-            return false;
-    }
-    return a[i] == b[i];
-}
 
 void safeSystem(char *what)
 {
@@ -34,8 +24,26 @@ void safeSystem(char *what)
 
 ////////////////////////////
 
-int main(const int argc, const char *argv[])
+int main(const int c, const char *v[])
 {
+    vector<string> argv;
+
+    // Checking for multi-arg arguments, such as ' or " enclosed ones
+    for (int i = 0; i < c; i++)
+    {
+        string temp = v[i];
+        if (temp.find(' ') != string::npos)
+        {
+            argv.push_back('\'' + temp + '\'');
+        }
+        else
+        {
+            argv.push_back(temp);
+        }
+    }
+
+    int argc = argv.size();
+
     try
     {
 
@@ -66,7 +74,7 @@ int main(const int argc, const char *argv[])
 
         ///////////////////////////
 
-        if (cmpCharArrs(argv[1], "copy"))
+        if (argv[1] == "copy")
         {
             if (argc < 3)
             {
@@ -115,7 +123,7 @@ int main(const int argc, const char *argv[])
                  << "\033[0m\n";
         }
 
-        else if (cmpCharArrs(argv[1], "cut"))
+        else if (argv[1] == "cut")
         {
             if (argc < 3)
             {
@@ -164,7 +172,7 @@ int main(const int argc, const char *argv[])
                  << "\033[0m\n";
         }
 
-        else if (cmpCharArrs(argv[1], "paste"))
+        else if (argv[1] == "paste")
         {
             if (argc > 2)
             {
@@ -211,7 +219,7 @@ int main(const int argc, const char *argv[])
                  << "\033[0m\n";
         }
 
-        else if (cmpCharArrs(argv[1], "help"))
+        else if (argv[1] == "help")
         {
             cout << "\033[1;33m"
                  << "Command | Function\n"
