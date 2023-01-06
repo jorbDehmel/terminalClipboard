@@ -3,9 +3,7 @@
 #include <iostream>
 #include <fstream>
 #include <cassert>
-#include <filesystem>
 #include <string>
-#include <vector>
 
 #include "tags.hpp"
 
@@ -25,13 +23,6 @@ void safeSystem(string what)
     return;
 }
 
-void safeSystemBasic(char *what)
-{
-    if (system(what) != 0)
-        throw runtime_error(what);
-    return;
-}
-
 int system(string what)
 {
     return system(what.c_str());
@@ -39,26 +30,8 @@ int system(string what)
 
 ////////////////////////////
 
-int main(const int c, const char *v[])
+int main(const int argc, const char *argv[])
 {
-    vector<string> argv;
-
-    // Checking for multi-arg arguments, such as ' or " enclosed ones
-    for (int i = 0; i < c; i++)
-    {
-        string temp = v[i];
-        if (temp.find(' ') != string::npos)
-        {
-            argv.push_back('\'' + temp + '\'');
-        }
-        else
-        {
-            argv.push_back(temp);
-        }
-    }
-
-    int argc = argv.size();
-
     try
     {
         string formattedArgs[argc];
