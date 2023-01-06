@@ -5,31 +5,35 @@
 #include <cassert>
 #include <filesystem>
 #include <string>
+
+#include "tags.hpp"
+
 using namespace std;
 
 ////////////////////////////
 
-#define DIR "~/.clipboard"
-#define FILE "/data.txt"
+#define DIR "~/.clipboard/"
+#define CURRENT_CLIPBOARD_FILE ".currentCB.txt"
 
 ////////////////////////////
 
-bool cmpCharArrs(const char *a, const char b[])
+void safeSystem(string what)
 {
-    int i;
-    for (i = 0; a[i] != '\0' && b[i] != '\0'; i++)
-    {
-        if (a[i] != b[i])
-            return false;
-    }
-    return a[i] == b[i];
+    if (system(what.c_str()) != 0)
+        throw runtime_error(what);
+    return;
 }
 
-void safeSystem(char *what)
+void safeSystemBasic(char *what)
 {
     if (system(what) != 0)
         throw runtime_error(what);
     return;
+}
+
+int system(string what)
+{
+    return system(what.c_str());
 }
 
 ////////////////////////////
@@ -38,60 +42,96 @@ int main(const int argc, const char *argv[])
 {
     try
     {
+        string formattedArgs[argc];
+        for (int i = 0; i < argc; i++)
+        {
+            string current = argv[i];
+            if (current.find(' ') != string::npos)
+                formattedArgs[i] = '"' + current + '"';
+            else
+                formattedArgs[i] = current;
+        }
+
+        if (system("mkdir -p " DIR) != 0)
+        {
+            cout << tags::red_bold
+                 << "Error: could not make " << DIR << " directory.\n"
+                 << tags::reset;
+            return 2;
+        }
+
+        string file = "";
+
+        // Load current clipboard
+        safeSystem(string("touch ") + DIR + CURRENT_CLIPBOARD_FILE);
+        safeSystem(string("cp ") + DIR + CURRENT_CLIPBOARD_FILE + " ./temp.txt");
+
+        ifstream currentCB("temp.txt", ios::in);
+
+        if (!currentCB.is_open())
+        {
+            cout << "Could not find " << DIR CURRENT_CLIPBOARD_FILE << ", creating...\n";
+
+            system("echo clipboard >" DIR CURRENT_CLIPBOARD_FILE);
+            file = "clipboard";
+        }
+        else
+        {
+            getline(currentCB, file);
+        }
+        currentCB.close();
+
+        system("rm -rf temp.txt");
+
+        if (file == "")
+            file = "clipboard";
 
         if (argc < 2)
         {
-            cout << "\033[1;31m"
-                 << "Error: please enter a command. (see help for all commands)"
-                 << "\033[0m\n";
+            cout << tags::red_bold
+                 << "Error: please enter a command. (see help for all commands)\n"
+                 << tags::reset;
             return 1;
         }
 
         ///////////////////////////
 
-        if (system("mkdir -p " DIR) != 0)
+        if (system(string("touch ") + DIR + file) != 0)
         {
-            cout << "\033[1;31m"
-                 << "Error: could not make ~/.clipboard directory."
-                 << "\033[0m\n";
-            return 2;
-        }
-        else if (system("touch " DIR FILE) != 0)
-        {
-            cout << "\033[1;31m"
-                 << "Error: could not make ~/.clipboard/data.txt file."
-                 << "\033[0m\n";
+            cout << tags::red_bold
+                 << "Error: could not make " << DIR << file << " file.\n"
+                 << tags::reset;
             return 3;
         }
 
         ///////////////////////////
 
-        if (cmpCharArrs(argv[1], "copy"))
+        if (formattedArgs[1] == "copy")
         {
             if (argc < 3)
             {
-                cout << "\033[1;31m"
-                     << "Error:  requires filepath."
-                     << "\033[0m\n";
+                cout << tags::red_bold
+                     << "Error:  requires filepath.\n"
+                     << tags::reset;
                 return 4;
             }
             else if (argc > 3)
             {
-                cout << "\033[1;33m"
-                     << "Note: Unused argument(s) following filepath."
-                     << "\033[0m\n";
+                cout << tags::yellow_bold
+                     << "Note: Unused argument(s) following filepath.\n"
+                     << tags::reset;
             }
 
             //////////////////
 
-            safeSystem("mv " DIR FILE " ./temp.txt");
+            safeSystem(string("mv ") + DIR + file + " ./temp.txt");
 
             ofstream fout("./temp.txt", ios::out);
             if (!fout.is_open())
             {
-                cout << "\033[1;31m"
-                     << "Error:  could not open clipboard files."
-                     << "\033[0m\n";
+                cout << tags::red_bold
+                     << "Error:  could not open clipboard files.\n"
+                     << tags::reset;
                 return 5;
             }
 
@@ -103,44 +143,44 @@ int main(const int argc, const char *argv[])
             fin.close();
             safeSystem("rm tempcwd.txt");
 
-            fout << "cp -r " << cwd << "/" << argv[2] << " .";
+            fout << "cp -r " << cwd << "/" << formattedArgs[2] << " .";
             fout.close();
 
-            safeSystem("mv ./temp.txt " DIR FILE);
+            safeSystem(string("mv ./temp.txt ") + DIR + file);
 
             //////////////////
 
-            cout << "\033[1;32m"
-                 << "Copied!"
-                 << "\033[0m\n";
+            cout << tags::green_bold
+                 << "Copied!\n"
+                 << tags::reset;
         }
 
-        else if (cmpCharArrs(argv[1], "cut"))
+        else if (formattedArgs[1] == "cut")
         {
             if (argc < 3)
             {
-                cout << "\033[1;31m"
-                     << "Error:  requires filepath."
-                     << "\033[0m\n";
+                cout << tags::red_bold
+                     << "Error:  requires filepath.\n"
+                     << tags::reset;
                 return 4;
             }
             else if (argc > 3)
             {
-                cout << "\033[1;33m"
-                     << "Note: Unused argument(s) following filepath."
-                     << "\033[0m\n";
+                cout << tags::yellow_bold
+                     << "Note: Unused argument(s) following filepath.\n"
+                     << tags::reset;
             }
 
             //////////////////
 
-            safeSystem("mv " DIR FILE " ./temp.txt");
+            safeSystem(string("mv ") + DIR + file + " ./temp.txt");
 
             ofstream fout("./temp.txt", ios::out);
             if (!fout.is_open())
             {
-                cout << "\033[1;31m"
-                     << "Error:  could not open clipboard files."
-                     << "\033[0m\n";
+                cout << tags::red_bold
+                     << "Error:  could not open clipboard files.\n"
+                     << tags::reset;
                 return 5;
             }
 
@@ -152,39 +192,39 @@ int main(const int argc, const char *argv[])
             fin.close();
             safeSystem("rm tempcwd.txt");
 
-            fout << "mv " << cwd << "/" << argv[2] << " .";
+            fout << "mv " << cwd << "/" << formattedArgs[2] << " .";
             fout.close();
 
-            safeSystem("mv ./temp.txt " DIR FILE);
+            safeSystem(string("mv ./temp.txt ") + DIR + file);
 
             //////////////////
 
-            cout << "\033[1;32m"
-                 << "Cut!"
-                 << "\033[0m\n";
+            cout << tags::green_bold
+                 << "Cut!\n"
+                 << tags::reset;
         }
 
-        else if (cmpCharArrs(argv[1], "paste"))
+        else if (formattedArgs[1] == "paste")
         {
             if (argc > 2)
             {
-                cout << "\033[1;33m"
-                     << "Note: Unused argument(s)."
-                     << "\033[0m\n";
+                cout << tags::yellow_bold
+                     << "Note: Unused argument(s).\n"
+                     << tags::reset;
             }
 
             //////////////////
 
             cout << "Pasting...";
 
-            safeSystem("mv " DIR FILE " ./temp.txt");
+            safeSystem(string("mv ") + DIR + file + " ./temp.txt");
 
             ifstream fin("./temp.txt", ios::in);
             if (!fin.is_open())
             {
-                cout << "\033[1;31m"
-                     << "Error:  could not open clipboard files."
-                     << "\033[0m\n";
+                cout << tags::red_bold
+                     << "Error:  could not open clipboard files.\n"
+                     << tags::reset;
                 return 5;
             }
 
@@ -192,60 +232,153 @@ int main(const int argc, const char *argv[])
             getline(fin, command);
             fin.close();
 
-            safeSystem("mv ./temp.txt " DIR FILE);
+            safeSystem(string("mv ./temp.txt ") + DIR + file);
 
             if (system(command.c_str()) != 0)
             {
                 cout << "\r"
-                     << "\033[1;31m"
-                     << "Error:  could not paste."
-                     << "\033[0m\n";
+                     << tags::red_bold
+                     << "Error:  could not paste.\n"
+                     << tags::reset;
                 return 6;
             }
 
             //////////////////
 
             cout << "\r"
-                 << "\033[1;32m"
-                 << "Pasted!   "
-                 << "\033[0m\n";
+                 << tags::green_bold
+                 << "Pasted!   \n"
+                 << tags::reset;
         }
 
-        else if (cmpCharArrs(argv[1], "help"))
+        else if (formattedArgs[1] == "help")
         {
-            cout << "\033[1;33m"
-                 << "Command | Function\n"
-                 << "-------------------\n"
-                 << "  copy  |   Puts filepath on clipboard\n"
-                 << "  cut   |   Copies, and deletes upon paste\n"
-                 << "  paste |   Pastes whatever was in the clipboard to the cwd\n"
-                 << "  help  |   Displays this page\n\n"
-                 << "(Jorb Dehmel, 2022, jdehmel@outlook.com)\n"
-                 << "\033[0m\n";
+            cout << tags::yellow_bold
+                 << "Command  |   Function\n"
+                 << "---------------------\n"
+                 << "  copy   |   Puts filepath on clipboard\n"
+                 << "  cut    |   Copies, and deletes upon paste\n"
+                 << "  paste  |   Pastes whatever was in the clipboard to the cwd\n"
+                 << "  help   |   Displays this page\n"
+                 << "  switch |   Switches clipboards\n"
+                 << "  list   |   Lists all clipboards\n"
+                 << "  clear  |   Clears a clipboard\n"
+                 << "  remove |   Removes a clipboard\n"
+
+                 << "\n(Jorb Dehmel, 2022, jdehmel@outlook.com)\n"
+                 << tags::reset;
+        }
+
+        else if (formattedArgs[1] == "switch")
+        {
+            if (argc < 3)
+            {
+                cout << tags::red_bold
+                     << "Error:  Requires destination clipboard.\n"
+                     << tags::reset;
+                return 10;
+            }
+            else if (argc > 3)
+            {
+                cout << tags::yellow_bold
+                     << "Note: Unused argument(s).\n"
+                     << tags::reset;
+            }
+
+            safeSystem(string("echo ") + formattedArgs[2] + " >" + DIR + CURRENT_CLIPBOARD_FILE);
+
+            cout << tags::green_bold
+                 << "Changed current clipboard to \"" << formattedArgs[2] << "\"\n"
+                 << tags::reset;
+        }
+
+        else if (formattedArgs[1] == "list")
+        {
+            if (argc > 2)
+            {
+                cout << tags::yellow_bold
+                     << "Note: Unused argument(s).\n"
+                     << tags::reset;
+            }
+
+            cout << tags::green_bold
+                 << "Current clipboard: " << tags::reset << "\""
+                 << file << "\""
+                 << tags::green_bold
+                 << "\nOthers: "
+                 << tags::reset << flush;
+
+            system("ls " DIR);
+        }
+
+        else if (formattedArgs[1] == "clear")
+        {
+            if (argc < 3)
+            {
+                cout << tags::red_bold
+                     << "Error:  Requires clipboard to clear.\n"
+                     << tags::reset;
+                return 10;
+            }
+            else if (argc > 3)
+            {
+                cout << tags::yellow_bold
+                     << "Note: Unused argument(s).\n"
+                     << tags::reset;
+            }
+
+            safeSystem(string("echo >") + DIR + file);
+
+            cout << tags::green_bold
+                 << "Emptied clipboard \"" << formattedArgs[2] << "\"\n"
+                 << tags::reset;
+        }
+
+        else if (formattedArgs[1] == "remove")
+        {
+            if (argc < 3)
+            {
+                cout << tags::red_bold
+                     << "Error:  Requires clipboard to remove.\n"
+                     << tags::reset;
+                return 10;
+            }
+            else if (argc > 3)
+            {
+                cout << tags::yellow_bold
+                     << "Note: Unused argument(s).\n"
+                     << tags::reset;
+            }
+
+            safeSystem(string("rm -rf ") + DIR + formattedArgs[2]);
+
+            cout << tags::green_bold
+                 << "Removed clipboard \"" << formattedArgs[2] << "\"\n"
+                 << tags::reset;
         }
 
         ///////////////////////////
 
         else
         {
-            cout << "\033[1;31m"
-                 << "Invalid command '" << argv[1] << "'. (see help for all commands)"
-                 << "\033[0m\n";
+            cout << tags::red_bold
+                 << "Invalid command '" << formattedArgs[1] << "'. (see help for all commands)\n"
+                 << tags::reset;
             return 7;
         }
     }
     catch (const runtime_error &e)
     {
-        cout << "\033[1;31m"
+        cout << tags::red_bold
              << e.what()
-             << "\033[0m\n";
+             << tags::reset;
         return 8;
     }
     catch (...)
     {
-        cout << "\033[1;31m"
-             << "An unknown fatal error occured."
-             << "\033[0m\n";
+        cout << tags::red_bold
+             << "An unknown fatal error occured.\n"
+             << tags::reset;
         return 9;
     }
 
