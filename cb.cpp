@@ -38,8 +38,26 @@ int system(string what)
 
 ////////////////////////////
 
-int main(const int argc, const char *argv[])
+int main(const int c, const char *v[])
 {
+    vector<string> argv;
+
+    // Checking for multi-arg arguments, such as ' or " enclosed ones
+    for (int i = 0; i < c; i++)
+    {
+        string temp = v[i];
+        if (temp.find(' ') != string::npos)
+        {
+            argv.push_back('\'' + temp + '\'');
+        }
+        else
+        {
+            argv.push_back(temp);
+        }
+    }
+
+    int argc = argv.size();
+
     try
     {
         string formattedArgs[argc];
