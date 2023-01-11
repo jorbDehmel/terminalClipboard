@@ -4,15 +4,32 @@
 #include <fstream>
 #include <cassert>
 #include <string>
+#include <set>
 
 #include "tags.hpp"
+#include "getOS.hpp"
 
 using namespace std;
 
 ////////////////////////////
 
+#if (defined(_WIN32) || defined(_WIN64))
+
+#define DIR "~\\.clipboard\\"
+#define CURRENT_CLIPBOARD_FILE ".currentCB.txt"
+#define NEWFILE "New-Item "
+#define NEWDIR "mkdir -p "
+#define RM "rm -r "
+
+#else
+
 #define DIR "~/.clipboard/"
 #define CURRENT_CLIPBOARD_FILE ".currentCB.txt"
+#define NEWFILE "touch "
+#define NEWDIR "mkdir -p "
+#define RM "rm -rf "
+
+#endif
 
 ////////////////////////////
 
@@ -28,6 +45,39 @@ int system(string what)
     return system(what.c_str());
 }
 
+void checkArg(string arg)
+{
+    set<char> illegalChars = {';', '&', '|', '!', '#', '=', '`'};
+
+    for (char c : arg)
+    {
+        if (illegalChars.count(c) != 0)
+        {
+            throw runtime_error("Illegal character detected");
+        }
+    }
+    return;
+}
+
+string getCWD()
+{
+    safeSystem("pwd > tempcwd.txt");
+    string cwd;
+    ifstream fin("tempcwd.txt", ios::in);
+    assert(fin.is_open());
+
+    #if (defined(_WIN32) || defined(_WIN64))
+        string garbage;
+        getline(fin, garbage);
+    #endif
+
+    fin >> cwd;
+    fin.close();
+    safeSystem(RM " tempcwd.txt");
+
+    return cwd;
+}
+
 ////////////////////////////
 
 int main(const int argc, const char *argv[])
@@ -38,13 +88,15 @@ int main(const int argc, const char *argv[])
         for (int i = 0; i < argc; i++)
         {
             string current = argv[i];
+            checkArg(current);
+
             if (current.find(' ') != string::npos)
                 formattedArgs[i] = '"' + current + '"';
             else
                 formattedArgs[i] = current;
         }
 
-        if (system("mkdir -p " DIR) != 0)
+        if (system(NEWDIR DIR) != 0)
         {
             cout << tags::red_bold
                  << "Error: could not make " << DIR << " directory.\n"
@@ -55,7 +107,7 @@ int main(const int argc, const char *argv[])
         string file = "";
 
         // Load current clipboard
-        safeSystem(string("touch ") + DIR + CURRENT_CLIPBOARD_FILE);
+        safeSystem(NEWFILE DIR CURRENT_CLIPBOARD_FILE);
         safeSystem(string("cp ") + DIR + CURRENT_CLIPBOARD_FILE + " ./temp.txt");
 
         ifstream currentCB("temp.txt", ios::in);
@@ -64,7 +116,7 @@ int main(const int argc, const char *argv[])
         {
             cout << "Could not find " << DIR CURRENT_CLIPBOARD_FILE << ", creating...\n";
 
-            system("echo clipboard >" DIR CURRENT_CLIPBOARD_FILE);
+            system("echo clipboard > " DIR CURRENT_CLIPBOARD_FILE);
             file = "clipboard";
         }
         else
@@ -73,7 +125,7 @@ int main(const int argc, const char *argv[])
         }
         currentCB.close();
 
-        system("rm -rf temp.txt");
+        system(RM " temp.txt");
 
         if (file == "")
             file = "clipboard";
@@ -88,13 +140,8 @@ int main(const int argc, const char *argv[])
 
         ///////////////////////////
 
-        if (system(string("touch ") + DIR + file) != 0)
-        {
-            cout << tags::red_bold
-                 << "Error: could not make " << DIR << file << " file.\n"
-                 << tags::reset;
-            return 3;
-        }
+        // This command may fail in powershell
+        system(string(NEWFILE) + DIR + file) != 0;
 
         ///////////////////////////
 
@@ -127,13 +174,7 @@ int main(const int argc, const char *argv[])
                 return 5;
             }
 
-            safeSystem("pwd >tempcwd.txt");
-            string cwd;
-            ifstream fin("tempcwd.txt", ios::in);
-            assert(fin.is_open());
-            fin >> cwd;
-            fin.close();
-            safeSystem("rm tempcwd.txt");
+            string cwd = getCWD();
 
             fout << "cp -r " << cwd << "/" << formattedArgs[2] << " .";
             fout.close();
@@ -176,13 +217,7 @@ int main(const int argc, const char *argv[])
                 return 5;
             }
 
-            safeSystem("pwd >tempcwd.txt");
-            string cwd;
-            ifstream fin("tempcwd.txt", ios::in);
-            assert(fin.is_open());
-            fin >> cwd;
-            fin.close();
-            safeSystem("rm tempcwd.txt");
+            string cwd = getCWD();
 
             fout << "mv " << cwd << "/" << formattedArgs[2] << " .";
             fout.close();
@@ -277,7 +312,7 @@ int main(const int argc, const char *argv[])
                      << tags::reset;
             }
 
-            safeSystem(string("echo ") + formattedArgs[2] + " >" + DIR + CURRENT_CLIPBOARD_FILE);
+            safeSystem(string("echo ") + formattedArgs[2] + " > " + DIR + CURRENT_CLIPBOARD_FILE);
 
             cout << tags::green_bold
                  << "Changed current clipboard to \"" << formattedArgs[2] << "\"\n"
@@ -319,7 +354,7 @@ int main(const int argc, const char *argv[])
                      << tags::reset;
             }
 
-            safeSystem(string("echo >") + DIR + file);
+            safeSystem(string("echo > ") + DIR + file);
 
             cout << tags::green_bold
                  << "Emptied clipboard \"" << formattedArgs[2] << "\"\n"
@@ -342,7 +377,7 @@ int main(const int argc, const char *argv[])
                      << tags::reset;
             }
 
-            safeSystem(string("rm -rf ") + DIR + formattedArgs[2]);
+            safeSystem(string(RM) + DIR + formattedArgs[2]);
 
             cout << tags::green_bold
                  << "Removed clipboard \"" << formattedArgs[2] << "\"\n"
@@ -363,6 +398,7 @@ int main(const int argc, const char *argv[])
     {
         cout << tags::red_bold
              << e.what()
+             << '\n'
              << tags::reset;
         return 8;
     }
