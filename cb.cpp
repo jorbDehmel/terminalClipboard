@@ -96,13 +96,7 @@ int main(const int argc, const char *argv[])
                 formattedArgs[i] = current;
         }
 
-        if (system(NEWDIR DIR) != 0)
-        {
-            cout << tags::red_bold
-                 << "Error: could not make " << DIR << " directory.\n"
-                 << tags::reset;
-            return 2;
-        }
+        system(NEWDIR DIR);
 
         string file = "";
 
@@ -141,7 +135,7 @@ int main(const int argc, const char *argv[])
         ///////////////////////////
 
         // This command may fail in powershell
-        system(string(NEWFILE) + DIR + file) != 0;
+        system(string(NEWFILE) + DIR + file);
 
         ///////////////////////////
 
