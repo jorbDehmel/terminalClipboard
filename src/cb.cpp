@@ -5,9 +5,9 @@
 #include <cassert>
 #include <string>
 #include <set>
+#include <vector>
 
 #include "tags.hpp"
-#include "getOS.hpp"
 
 using namespace std;
 
@@ -66,10 +66,10 @@ string getCWD()
     ifstream fin("tempcwd.txt", ios::in);
     assert(fin.is_open());
 
-    #if (defined(_WIN32) || defined(_WIN64))
-        string garbage;
-        getline(fin, garbage);
-    #endif
+#if (defined(_WIN32) || defined(_WIN64))
+    string garbage;
+    getline(fin, garbage);
+#endif
 
     fin >> cwd;
     fin.close();
@@ -84,18 +84,19 @@ int main(const int argc, const char *argv[])
 {
     try
     {
-        string formattedArgs[argc];
+        vector<string> formattedArgs;
         for (int i = 0; i < argc; i++)
         {
             string current = argv[i];
             checkArg(current);
 
             if (current.find(' ') != string::npos)
-                formattedArgs[i] = '"' + current + '"';
+                formattedArgs.push_back('"' + current + '"');
             else
-                formattedArgs[i] = current;
+                formattedArgs.push_back(current);
         }
 
+        // This command may fail in powershell
         system(NEWDIR DIR);
 
         string file = "";
@@ -383,7 +384,7 @@ int main(const int argc, const char *argv[])
         else
         {
             cout << tags::red_bold
-                 << "Invalid command '" << formattedArgs[1] << "'. (see help for all commands)\n"
+                 << "Invalid command '" << formattedArgs[1] << "'. (cb help for all commands)\n"
                  << tags::reset;
             return 7;
         }
